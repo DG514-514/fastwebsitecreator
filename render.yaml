@@ -1,0 +1,22 @@
+# Render Blueprint — free static site. https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: fastwebsitecreator
+    runtime: static
+    branch: main
+    buildCommand: ""
+    staticPublishPath: .
+    pullRequestPreviewsEnabled: true
+    domains:
+      - fastwebsitecreator.com
+      - www.fastwebsitecreator.com
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
