@@ -3,7 +3,7 @@
 Send this to each client once their brief arrives.
 
 ## 1. Payment
-- [ ] $99 build fee paid (payment link sent with our reply)
+- [ ] $59 build fee paid (payment link sent with our reply)
 - [ ] $10/month support plan: yes / no
 
 ## 2. Brief (the 2–3 business day clock starts when 1 and 2 are complete)

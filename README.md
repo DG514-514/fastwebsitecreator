@@ -1,6 +1,6 @@
 # FastWebsiteCreator.com
 
-Marketing website for **FastWebsiteCreator** — custom websites built from a client's concept for a **flat $99**,
+Marketing website for **FastWebsiteCreator** — custom websites built from a client's concept for a **flat $59**,
 first draft in **2–3 business days**, optional support for **$10/month**.
 
 The website is plain HTML/CSS/JS with no build step. A small Node service in `api/` receives the project brief
