@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>FastWebsiteCreator Admin</title>
+  <link rel="icon" type="image/svg+xml" href="/admin/assets/favicon.svg">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/admin/assets/admin.css">
+  <script src="/admin/assets/admin.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#/requests">
+        <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="currentColor"/><path d="M18 4 8 18h7l-2 10 11-15h-7z" fill="#0b1020"/></svg>
+        <span>FastWebsite<b>Creator</b> <em>Admin</em></span>
+      </a>
+      <nav class="tabs" aria-label="Sections">
+        <a href="#/requests" data-tab="requests">Project requests</a>
+        <a href="#/clients" data-tab="clients">Clients</a>
+      </nav>
+      <button class="link-btn" id="logout" type="button">Sign out</button>
+    </div>
+  </header>
+  <main id="app" class="wrap" aria-live="polite"></main>
+</body>
+</html>
