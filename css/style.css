@@ -157,6 +157,22 @@ details p { margin: 12px 0 0; color: var(--muted); }
 .form legend { font-weight: 600; font-size: .9rem; color: var(--ink); padding: 0 6px; }
 .form .chk { display: inline-flex; align-items: center; gap: 8px; font-weight: 500; }
 .form .chk input { width: 18px; height: 18px; accent-color: var(--violet); }
+.upload { display: grid; gap: 8px; }
+.upload-label { font-weight: 600; font-size: .9rem; color: var(--ink); }
+.form .dropzone { position: relative; display: grid; justify-items: center; gap: 4px; padding: 24px 16px; border: 2px dashed #c9cde0; border-radius: 12px; background: var(--bg-alt); text-align: center; cursor: pointer; font-weight: 400; color: var(--text); transition: border-color .15s, background .15s; }
+.form .dropzone:hover, .form .dropzone.over { border-color: var(--violet); background: #f1efff; }
+.form .dropzone:focus-within { outline: 3px solid var(--violet); outline-offset: 2px; }
+.dropzone svg { width: 30px; height: 30px; color: var(--violet); }
+.dropzone b { color: var(--violet); }
+.dropzone input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.file-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.file-list:empty { display: none; }
+.file-list li { display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 14px; border: 1px solid var(--line); border-radius: 10px; font-size: .9rem; }
+.file-list .fname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
+.file-list .fsize { color: var(--muted); font-size: .82rem; white-space: nowrap; }
+.file-list button { border: 0; background: none; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; color: var(--muted); font-size: 1.1rem; line-height: 1; }
+.file-list button:hover { background: var(--bg-alt); color: #b91c1c; }
+.file-list .file-err { color: #b91c1c; border-color: #fecaca; background: #fef2f2; }
 .form-note { font-size: .85rem; color: var(--muted); margin: 0; }
 .form-status { margin: 0; font-weight: 600; min-height: 1.2em; }
 .form-status.ok { color: #15803d; }

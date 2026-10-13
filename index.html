@@ -261,8 +261,18 @@
           <label>Pages you need
             <input name="pages" placeholder="e.g. Home, About, Services, Contact, Book now">
           </label>
-          <label>Links to your sketches, logo &amp; images <small>(Google Drive, Dropbox, etc.)</small>
-            <input name="assets" placeholder="https://drive.google.com/...">
+          <div class="upload">
+            <span class="upload-label">Upload your sketches, logo &amp; images <small>(optional)</small></span>
+            <label class="dropzone" for="files">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+              <span><b>Click to upload</b> or drag &amp; drop files here</span>
+              <small>Images, PDF, Word, PowerPoint, design files or ZIP · up to 10 files, 10 MB each, 25 MB total</small>
+              <input id="files" name="files" type="file" multiple accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.key,.txt,.rtf,.ai,.eps,.psd,.fig,.sketch,.zip">
+            </label>
+            <ul class="file-list" aria-live="polite"></ul>
+          </div>
+          <label>Files too big to upload? Paste a link <small>(optional — Google Drive, Dropbox, WeTransfer)</small>
+            <input name="assetLinks" placeholder="https://...">
           </label>
           <label>Websites you like <small>(optional)</small>
             <input name="inspiration" placeholder="Links and what you like about them">

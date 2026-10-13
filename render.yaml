@@ -1,4 +1,4 @@
-# Render Blueprint — free static site. https://render.com/docs/blueprint-spec
+# Render Blueprint — free static website + free brief/upload service. https://render.com/docs/blueprint-spec
 services:
   - type: web
     name: fastwebsitecreator
@@ -20,3 +20,28 @@ services:
       - path: /*
         name: Referrer-Policy
         value: strict-origin-when-cross-origin
+
+  # Receives the website's project brief form (with file uploads) and emails it to you.
+  - type: web
+    name: fastwebsitecreator-api
+    runtime: node
+    plan: free
+    rootDir: api
+    branch: main
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: TRUST_PROXY
+        value: "1"
+      - key: ALLOWED_ORIGINS
+        value: https://fastwebsitecreator.com,https://www.fastwebsitecreator.com,https://fastwebsitecreator.onrender.com
+      - key: RESEND_API_KEY
+        sync: false
+      - key: NOTIFY_EMAIL
+        sync: false
+      - key: MAIL_FROM
+        sync: false

@@ -1,9 +1,10 @@
 // Business settings — edit these in one place.
 window.FWC_CONFIG = {
-  // Where project briefs and inquiries go.
+  // Shown on the site and used if the upload service can't be reached.
   email: 'build@fastwebsitecreator.com',
 
-  // Optional: a form service endpoint (e.g. Formspree: https://formspree.io/f/xxxxxxx).
-  // Leave empty and the form opens the visitor's email app with the brief pre-filled instead.
-  formEndpoint: '',
+  // The brief/upload service (the "fastwebsitecreator-api" service on Render).
+  // It emails each brief to you with the uploaded files attached.
+  // Leave empty and the form opens the visitor's email app instead (no uploads).
+  apiUrl: 'https://fastwebsitecreator-api.onrender.com/api/brief',
 };
