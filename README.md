@@ -33,24 +33,46 @@ npx http-server -p 8080 .
 
 Any static host works too (Netlify, Cloudflare Pages, GitHub Pages): publish the repository root.
 
-## Brief & upload service (`api/`)
+## Backend (`api/`): project briefs, uploads and owner dashboard
 
-Clients can upload up to 10 files (10 MB each, 25 MB total): images, PDF, Word, PowerPoint, design files or ZIP.
-Each brief arrives as an email with the files attached, and replying goes straight to the client.
+Clients can upload up to 10 files (10 MB each, 25 MB total) with their brief. Every brief is:
 
-Render creates it from `render.yaml` as **fastwebsitecreator-api**. In that service's **Environment** settings, set:
+- **saved** with its files, and listed in your owner dashboard, and
+- **emailed** to build@fastwebsitecreator.com with the files attached (reply goes straight to the client).
 
-| Variable         | Purpose                                                                          |
-|------------------|----------------------------------------------------------------------------------|
-| `RESEND_API_KEY` | API key from resend.com (required)                                               |
-| `NOTIFY_EMAIL`   | Where briefs go. Until your domain is verified in Resend, use your Resend account's email address |
-| `MAIL_FROM`      | Optional, once fastwebsitecreator.com is verified in Resend, e.g. `FastWebsiteCreator <briefs@fastwebsitecreator.com>` |
+### Owner dashboard: https://admin.fastwebsitecreator.com/admin
 
-The service is on Render's free plan, which sleeps when idle, so the first brief after a quiet spell can take
-up to a minute to send. Switch it to **Starter** in Render to avoid that.
+- **Project requests**: every brief with status filters (New → Reviewing → Awaiting payment → Building →
+  Draft sent → Live, or Closed), search, uploaded files with image previews, and private notes.
+- **Clients**: briefs are grouped by email address, so each client's projects are in one place, with their
+  contact details, support plan and notes.
+
+### Render settings
+
+Render creates the backend from `render.yaml` as **fastwebsitecreator-api** (Starter plan with a 1 GB disk, so requests
+and files survive restarts). In that service's **Environment** settings, set:
+
+| Variable                          | Purpose                                                            |
+|-----------------------------------|--------------------------------------------------------------------|
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD`  | Your dashboard login (the dashboard stays off until both are set)  |
+| `RESEND_API_KEY`                  | API key from resend.com, for the email notifications               |
+
+`NOTIFY_EMAIL` (build@fastwebsitecreator.com) and `MAIL_FROM` (briefs@fastwebsitecreator.com) are set in `render.yaml`.
+For those emails to arrive:
+
+1. **Verify fastwebsitecreator.com in Resend** (Domains → Add domain) and add the DNS records it shows in GoDaddy.
+   Until then Resend only sends to your Resend account's own address.
+2. **Give build@ a mailbox or forward**, so it has MX records and can receive mail.
+
+Briefs are always saved to the dashboard, even if an email can't be sent.
+
+### Dashboard address
+
+Add a **CNAME** record in GoDaddy: name `admin`, value `fastwebsitecreator-api.onrender.com`. Until it's verified,
+the dashboard is also at https://fastwebsitecreator-api.onrender.com/admin.
 
 ```bash
-cd api && npm install && npm test   # run the tests
+cd api && npm install && npm test   # run the tests (Node 22.13+)
 ```
 
 ## Layout
@@ -62,7 +84,7 @@ terms.html          Terms of service (draft, have it reviewed)
 css/style.css       All styles
 js/config.js        Business settings
 js/main.js          Mobile menu, project form and file uploads
-api/                Brief/upload service (Node + Express), emails briefs via Resend
+api/                Backend (Node + Express + SQLite): brief form, uploads, emails, owner dashboard
 img/                Favicon and social share image (og-image.png, 1200×627)
 docs/               Client onboarding checklist
 ```

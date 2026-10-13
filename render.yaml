@@ -1,4 +1,4 @@
-# Render Blueprint — free static website + free brief/upload service. https://render.com/docs/blueprint-spec
+# Render Blueprint — free static website + backend (brief form, uploads, owner dashboard). https://render.com/docs/blueprint-spec
 services:
   - type: web
     name: fastwebsitecreator
@@ -21,27 +21,46 @@ services:
         name: Referrer-Policy
         value: strict-origin-when-cross-origin
 
-  # Receives the website's project brief form (with file uploads) and emails it to you.
+  # Backend: receives the website's project brief form (with file uploads), emails each brief
+  # to build@fastwebsitecreator.com, and hosts the owner dashboard at https://admin.fastwebsitecreator.com/admin
   - type: web
     name: fastwebsitecreator-api
     runtime: node
-    plan: free
+    plan: starter            # needed for the persistent disk that stores requests and uploaded files
     rootDir: api
     branch: main
     buildCommand: npm ci
     startCommand: npm start
     healthCheckPath: /healthz
     autoDeploy: true
+    domains:
+      - admin.fastwebsitecreator.com
     envVars:
       - key: NODE_VERSION
         value: "22"
+      - key: NODE_ENV
+        value: production
       - key: TRUST_PROXY
         value: "1"
+      - key: DB_PATH
+        value: /var/data/fwc.db
+      - key: UPLOAD_DIR
+        value: /var/data/uploads
+      - key: ADMIN_URL
+        value: https://admin.fastwebsitecreator.com
       - key: ALLOWED_ORIGINS
         value: https://fastwebsitecreator.com,https://www.fastwebsitecreator.com,https://fastwebsitecreator.onrender.com
+      - key: NOTIFY_EMAIL
+        value: build@fastwebsitecreator.com
+      - key: MAIL_FROM
+        value: FastWebsiteCreator <briefs@fastwebsitecreator.com>
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
       - key: RESEND_API_KEY
         sync: false
-      - key: NOTIFY_EMAIL
-        sync: false
-      - key: MAIL_FROM
-        sync: false
+    disk:
+      name: fwc-data
+      mountPath: /var/data
+      sizeGB: 1
