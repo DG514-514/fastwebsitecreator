@@ -23,6 +23,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { openDb, STATUSES } = require('./db');
 const { createAuth } = require('./auth');
+const { buildClientEmail, hasEmail } = require('./client-emails');
 
 const MAX_FILES = 10;
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -95,7 +96,7 @@ async function sendWithResend({ apiKey, from, to, replyTo, email, files }) {
       subject: email.subject,
       text: email.text,
       html: email.html,
-      attachments: files.map((f) => ({ filename: f.originalname, content: f.buffer.toString('base64') })),
+      attachments: (files || []).map((f) => ({ filename: f.originalname, content: f.buffer.toString('base64') })),
     }),
   });
   if (!res.ok) throw new Error(`Resend responded ${res.status}: ${await res.text()}`);
@@ -294,17 +295,55 @@ function createApp(env = process.env, { send = sendWithResend, db } = {}) {
       .map((f) => ({ ...f, previewable: Boolean(INLINE_TYPES[path.extname(f.original_name).toLowerCase()]) }));
     const otherRequests = db.prepare('SELECT id, business, status, created_at FROM requests WHERE client_id = ? AND id != ? ORDER BY created_at DESC')
       .all(request.client_id, request.id);
-    res.json({ request, client, files, otherRequests });
+    const emails = db.prepare('SELECT id, status, to_email, subject, body, error, sent_at FROM client_emails WHERE request_id = ? ORDER BY id DESC')
+      .all(request.id);
+    res.json({ request, client, files, otherRequests, emails });
   });
 
-  admin.patch('/requests/:id', (req, res) => {
+  const getClient = (id) => db.prepare('SELECT * FROM clients WHERE id = ?').get(id);
+  const mailFrom = () => env.MAIL_FROM || 'FastWebsiteCreator <onboarding@resend.dev>';
+
+  // Preview of the email the client would get for a status change.
+  admin.get('/requests/:id/client-email', (req, res) => {
     const request = getRequest(req.params.id);
     if (!request) return res.status(404).json({ error: 'Not found' });
-    const { status, notes } = req.body || {};
+    const client = getClient(request.client_id);
+    const email = buildClientEmail(req.query.status, request, client, clean(req.query.message, 5000));
+    res.json({ to: client.email, email: email && { subject: email.subject, text: email.text } });
+  });
+
+  async function emailClient(request, status, message) {
+    const client = getClient(request.client_id);
+    const email = buildClientEmail(status, request, client, message);
+    let error = null;
+    if (!env.RESEND_API_KEY) {
+      error = 'Email is not set up (RESEND_API_KEY is missing).';
+    } else {
+      try {
+        await send({ apiKey: env.RESEND_API_KEY, from: mailFrom(), to: client.email, replyTo: env.NOTIFY_EMAIL || undefined, email });
+      } catch (err) {
+        console.error(`Status email for request #${request.id} failed:`, err.message);
+        error = 'The email service refused the message. Check Resend → Logs.';
+      }
+    }
+    db.prepare('INSERT INTO client_emails (request_id, status, to_email, subject, body, error) VALUES (?, ?, ?, ?, ?, ?)')
+      .run(request.id, status, client.email, email.subject, email.text, error);
+    return error ? { sent: false, error } : { sent: true, to: client.email };
+  }
+
+  admin.patch('/requests/:id', async (req, res) => {
+    const request = getRequest(req.params.id);
+    if (!request) return res.status(404).json({ error: 'Not found' });
+    const { status, notes, notifyClient, message } = req.body || {};
     if (status !== undefined && !STATUSES.includes(status)) return res.status(400).json({ error: 'Unknown status.' });
     db.prepare("UPDATE requests SET status = ?, notes = ?, updated_at = datetime('now') WHERE id = ?")
       .run(status ?? request.status, notes !== undefined ? clean(notes, 20000) : request.notes, request.id);
-    res.json({ request: getRequest(request.id) });
+    const updated = getRequest(request.id);
+    const changed = status !== undefined && status !== request.status;
+    const clientEmail = changed && notifyClient && hasEmail(status)
+      ? await emailClient(updated, status, clean(message, 5000))
+      : null;
+    res.json({ request: updated, clientEmail });
   });
 
   admin.delete('/requests/:id', (req, res) => {
@@ -329,8 +368,6 @@ function createApp(env = process.env, { send = sendWithResend, db } = {}) {
     `).all(...Array(3).fill(likeQuery(req.query.q)));
     res.json({ clients: rows });
   });
-
-  const getClient = (id) => db.prepare('SELECT * FROM clients WHERE id = ?').get(id);
 
   admin.get('/clients/:id', (req, res) => {
     const client = getClient(req.params.id);

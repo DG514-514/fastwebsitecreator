@@ -175,3 +175,52 @@ test('admin writes must be JSON', async () => {
     assert.strictEqual(res.status, 415);
   });
 });
+
+test('emails the client when their project status changes, and logs it', async () => {
+  const sent = [];
+  await withServer(async (url) => {
+    await postBrief(url, brief({ name: 'Sam Lee' }));
+    const { cookie } = await login(url);
+
+    const preview = await (await adminApi(url, cookie, '/requests/1/client-email?status=awaiting_payment&message=Pay%20here%3A%20https%3A%2F%2Fpay.example')).json();
+    assert.strictEqual(preview.to, 'sam@example.com');
+    assert.match(preview.email.subject, /Sam Bakery/);
+    assert.match(preview.email.text, /Hi Sam,/);
+    assert.match(preview.email.text, /\$59/);
+    assert.match(preview.email.text, /Pay here: https:\/\/pay\.example/);
+    assert.strictEqual((await (await adminApi(url, cookie, '/requests/1/client-email?status=closed')).json()).email, null);
+
+    let res = await (await adminApi(url, cookie, '/requests/1', { method: 'PATCH', body: { status: 'awaiting_payment', notifyClient: true, message: 'Pay here: https://pay.example' } })).json();
+    assert.deepStrictEqual(res.clientEmail, { sent: true, to: 'sam@example.com' });
+
+    // No email when not asked, when the status is unchanged, or for statuses without an email.
+    res = await (await adminApi(url, cookie, '/requests/1', { method: 'PATCH', body: { status: 'building' } })).json();
+    assert.strictEqual(res.clientEmail, null);
+    res = await (await adminApi(url, cookie, '/requests/1', { method: 'PATCH', body: { status: 'building', notifyClient: true } })).json();
+    assert.strictEqual(res.clientEmail, null);
+    res = await (await adminApi(url, cookie, '/requests/1', { method: 'PATCH', body: { status: 'closed', notifyClient: true } })).json();
+    assert.strictEqual(res.clientEmail, null);
+
+    const detail = await (await adminApi(url, cookie, '/requests/1')).json();
+    assert.strictEqual(detail.emails.length, 1);
+    assert.strictEqual(detail.emails[0].status, 'awaiting_payment');
+    assert.strictEqual(detail.emails[0].error, null);
+  }, { send: async (msg) => sent.push(msg), env: { NOTIFY_EMAIL: 'build@fastwebsitecreator.com' } });
+
+  const clientMails = sent.filter((m) => m.to === 'sam@example.com');
+  assert.strictEqual(clientMails.length, 1);
+  assert.strictEqual(clientMails[0].replyTo, 'build@fastwebsitecreator.com');
+  assert.match(clientMails[0].email.html, /<a href="https:\/\/pay\.example"/);
+});
+
+test('saves the status and logs the failure when the client email cannot be sent', async () => {
+  await withServer(async (url) => {
+    await postBrief(url, brief());
+    const { cookie } = await login(url);
+    const res = await (await adminApi(url, cookie, '/requests/1', { method: 'PATCH', body: { status: 'live', notifyClient: true } })).json();
+    assert.strictEqual(res.request.status, 'live');
+    assert.strictEqual(res.clientEmail.sent, false);
+    const detail = await (await adminApi(url, cookie, '/requests/1')).json();
+    assert.match(detail.emails[0].error, /Resend/);
+  }, { send: async (msg) => { if (msg.to === 'sam@example.com') throw new Error('rejected'); } });
+});

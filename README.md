@@ -44,6 +44,9 @@ Clients can upload up to 10 files (10 MB each, 25 MB total) with their brief. Ev
 
 - **Project requests**: every brief with status filters (New → Reviewing → Awaiting payment → Building →
   Draft sent → Live, or Closed), search, uploaded files with image previews, and private notes.
+- **Status emails to clients**: when you change a project's status you see a preview of the update email, can add a
+  personal message (e.g. a payment or draft link) or untick it, and every email sent is logged on the request.
+  Wording lives in `api/client-emails.js`. "New" and "Closed" never email the client.
 - **Clients**: briefs are grouped by email address, so each client's projects are in one place, with their
   contact details, support plan and notes.
 

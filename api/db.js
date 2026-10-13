@@ -53,6 +53,18 @@ function openDb(dbPath) {
     );
     CREATE INDEX IF NOT EXISTS idx_files_request ON files(request_id);
 
+    CREATE TABLE IF NOT EXISTS client_emails (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      request_id INTEGER NOT NULL REFERENCES requests(id) ON DELETE CASCADE,
+      status     TEXT NOT NULL,
+      to_email   TEXT NOT NULL,
+      subject    TEXT NOT NULL,
+      body       TEXT NOT NULL,
+      error      TEXT,
+      sent_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_client_emails_request ON client_emails(request_id, sent_at);
+
     CREATE TABLE IF NOT EXISTS admin_sessions (
       token_hash TEXT PRIMARY KEY,
       expires_at INTEGER NOT NULL
