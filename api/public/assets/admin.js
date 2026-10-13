@@ -128,19 +128,82 @@
 
   // ── Request detail ──
   views.request = async (id) => {
-    const { request, client, files, otherRequests } = await api(`/requests/${id}`);
+    const { request, client, files, otherRequests, emails } = await api(`/requests/${id}`);
     const field = (label, value) => (value ? el('div', { class: 'field' }, el('dt', {}, label), el('dd', {}, linkify(value))) : null);
+    const firstName = client.name.split(/\s+/)[0];
 
+    // Status change: pick a status, review the client email, then save.
     const status = el('select', { 'aria-label': 'Status' }, STATUSES.map((s) => el('option', { value: s }, STATUS_LABELS[s])));
     status.value = request.status;
-    status.addEventListener('change', async () => {
-      try {
-        await api(`/requests/${id}`, { method: 'PATCH', body: { status: status.value } });
-        toast(`Status set to ${STATUS_LABELS[status.value]}`);
-        statusBadge.replaceWith(statusBadge = badge(status.value));
-      } catch (err) { toast(err.message, true); }
-    });
+    const changePanel = el('div', { class: 'change-panel', hidden: true });
     let statusBadge = badge(request.status);
+
+    status.addEventListener('change', async () => {
+      const next = status.value;
+      if (next === request.status) { changePanel.hidden = true; return; }
+      const notify = el('input', { type: 'checkbox', checked: true });
+      const message = el('textarea', { rows: 3, placeholder: next === 'awaiting_payment' ? 'Optional: add your payment link or a personal note…' : next === 'draft_sent' ? 'Optional: add the link to the draft or a personal note…' : 'Optional: add a personal note…' });
+      const previewSubject = el('strong', {});
+      const previewText = el('div', { class: 'preview-text' });
+      const emailBits = el('div', { class: 'email-bits' },
+        el('label', { class: 'chk' }, notify, `Email ${firstName} about this`),
+        message,
+        el('div', { class: 'preview' }, el('span', { class: 'preview-label' }, `Preview · to ${client.email}`), previewSubject, previewText));
+      const loadPreview = async () => {
+        const { email } = await api(`/requests/${id}/client-email?status=${encodeURIComponent(next)}&message=${encodeURIComponent(message.value)}`);
+        return email;
+      };
+      const save = el('button', { class: 'btn btn-sm', type: 'button' }, 'Save status');
+      const cancel = el('button', { class: 'link-btn', type: 'button', onclick: () => { status.value = request.status; changePanel.hidden = true; } }, 'Cancel');
+
+      const email = await loadPreview().catch(() => null);
+      if (status.value !== next) return; // changed again while loading
+      if (email) {
+        previewSubject.textContent = email.subject;
+        previewText.textContent = email.text;
+        message.addEventListener('input', debounce(async () => {
+          const updated = await loadPreview().catch(() => null);
+          if (updated) previewText.textContent = updated.text;
+        }, 300));
+        notify.addEventListener('change', () => {
+          message.hidden = !notify.checked;
+          previewText.parentElement.hidden = !notify.checked;
+          save.textContent = notify.checked ? 'Save & email client' : 'Save status';
+        });
+        save.textContent = 'Save & email client';
+      }
+
+      save.addEventListener('click', async () => {
+        save.disabled = true;
+        try {
+          const result = await api(`/requests/${id}`, { method: 'PATCH', body: {
+            status: next, notifyClient: Boolean(email && notify.checked), message: message.value,
+          } });
+          if (result.clientEmail && !result.clientEmail.sent) toast(`Status saved, but the email wasn't sent: ${result.clientEmail.error}`, true);
+          else toast(result.clientEmail ? `Status set to ${STATUS_LABELS[next]} · email sent to ${firstName}` : `Status set to ${STATUS_LABELS[next]}`);
+          render();
+        } catch (err) {
+          toast(err.message, true);
+          save.disabled = false;
+        }
+      });
+
+      changePanel.replaceChildren(
+        el('p', { class: 'change-title' }, 'Change to ', badge(next)),
+        email ? emailBits : el('p', { class: 'muted small' }, 'No email is sent to the client for this status.'),
+        el('div', { class: 'change-actions' }, save, cancel));
+      changePanel.hidden = false;
+    });
+
+    const emailLog = emails.length
+      ? el('ul', { class: 'email-log' }, emails.map((m) => el('li', {},
+        el('details', {},
+          el('summary', {},
+            el('span', { class: 'email-subject' }, m.subject),
+            el('small', {}, `${m.error ? '⚠️ Not sent' : 'Sent'} · ${fmtDateTime(m.sent_at)}`)),
+          m.error ? el('p', { class: 'email-error' }, m.error) : null,
+          el('div', { class: 'preview-text' }, m.body)))))
+      : el('p', { class: 'muted' }, 'No emails sent yet. When you change the status, you can email the client an update.');
 
     const notes = el('textarea', { rows: 6, placeholder: 'Private notes: calls, decisions, logins received, payment details…' });
     notes.value = request.notes;
@@ -183,9 +246,10 @@
               field('Already has', request.have),
               field('$10/mo support', request.support ? 'Yes — wants support after launch' : 'No'))),
           el('section', { class: 'card' }, el('h2', {}, `Files (${files.length})`),
-            files.length ? el('div', { class: 'files' }, fileCards) : el('p', { class: 'muted' }, 'No files uploaded.'))),
+            files.length ? el('div', { class: 'files' }, fileCards) : el('p', { class: 'muted' }, 'No files uploaded.')),
+          el('section', { class: 'card' }, el('h2', {}, `Emails to client (${emails.length})`), emailLog)),
         el('aside', { class: 'col-side' },
-          el('section', { class: 'card' }, el('h2', {}, 'Status'), status,
+          el('section', { class: 'card' }, el('h2', {}, 'Status'), status, changePanel,
             el('h2', { class: 'mt' }, 'Notes'), notes, saveNotes),
           el('section', { class: 'card' }, el('h2', {}, 'Client'),
             el('p', { class: 'client-name' }, el('a', { href: `#/clients/${client.id}` }, client.name)),

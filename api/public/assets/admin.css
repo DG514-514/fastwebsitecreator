@@ -139,3 +139,23 @@ td.num { white-space: nowrap; }
   th:nth-child(n+4), td:nth-child(n+4) { display: none; }
   .search { max-width: none; }
 }
+
+/* Status change panel & client emails */
+.change-panel { margin-top: 12px; padding: 14px; border: 1.5px solid #dcd7ff; background: #f7f6ff; border-radius: 12px; display: grid; gap: 12px; }
+.change-panel[hidden], .change-panel [hidden] { display: none; }
+.change-title { margin: 0; font-weight: 600; color: var(--ink); }
+.email-bits { display: grid; gap: 10px; }
+.email-bits textarea { margin: 0; }
+.preview { display: grid; gap: 6px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px; max-height: 260px; overflow: auto; }
+.preview-label { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+.preview strong { color: var(--ink); font-size: .92rem; }
+.preview-text { white-space: pre-wrap; font-size: .86rem; color: var(--text); overflow-wrap: anywhere; }
+.change-actions { display: flex; align-items: center; gap: 8px; }
+.small { font-size: .85rem; margin: 0; }
+.email-log { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.email-log details { border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; }
+.email-log summary { cursor: pointer; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.email-log summary small { color: var(--muted); }
+.email-subject { font-weight: 600; color: var(--ink); }
+.email-log .preview-text { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--line); }
+.email-error { color: var(--danger); font-size: .86rem; margin: 10px 0 0; }
